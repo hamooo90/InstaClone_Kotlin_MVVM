@@ -16,10 +16,12 @@
 - Edit your profile information
 
 ## Preview
-<img src="demo1.gif" width="300" /><img src="demo2.gif" width="300" /><img src="demo3.gif" width="300" />
+<img src="demo1.gif" width="300" />
+<img src="demo2.gif" width="300" />
+<img src="demo3.gif" width="300" />
 
 ## Online Emulator
-[Open app in appetize.io](https://weather-flutter-a5921.web.app "InstaClone")
+[Open app in appetize.io](https://appetize.io/app/tm4jwy8kcntm7ccx8krngbweqw?device=pixel4&scale=75&orientation=portrait&osVersion=10.0 "InstaClone")
 
 - **Please do not spam the app**
 - You can login with this email and password
