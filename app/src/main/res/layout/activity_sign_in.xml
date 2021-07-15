@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#bd1947"
+    tools:context=".views.SignInActivity">
+
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="80dp"
+                    android:src="@drawable/instaclonelogo"
+                    app:tint="@color/white"
+                    android:layout_centerHorizontal="true"/>
+            </RelativeLayout>
+
+            <EditText
+                android:id="@+id/edit_text_email_address_sign_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="8dp"
+                android:inputType="textEmailAddress"
+                android:padding="10dp"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:background="@drawable/inputs_background"
+                android:maxLines="1"
+                android:hint="Email"
+                />
+
+
+            <EditText
+                android:id="@+id/edit_text_password_sign_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginVertical="8dp"
+                android:inputType="textPassword"
+                android:padding="10dp"
+                android:background="@drawable/inputs_background"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:hint="password"/>
+
+            <Button
+                android:id="@+id/btn_login_sign_in"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/button_login"
+                android:text="Login"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btn_new_account_sign_in"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Need New Account? Sign up"
+                android:textAllCaps="false"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="32dp"
+                android:layout_marginHorizontal="32dp"
+                android:textColor="@color/white"
+                style="?android:attr/borderlessButtonStyle"
+                android:background="@drawable/button_login"/>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+
+
+    <RelativeLayout
+        android:id="@+id/progress_bar_sign_in"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#7A000000"
+        android:visibility="gone">
+        <ProgressBar
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:indeterminateTint="@color/white"
+            android:layout_centerInParent="true"
+            tools:targetApi="lollipop" />
+    </RelativeLayout>
+
+
+
+</RelativeLayout>
