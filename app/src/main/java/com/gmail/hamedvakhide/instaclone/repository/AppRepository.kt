@@ -183,7 +183,7 @@ class AppRepository(application: Application) {
         userMap["email"] = email
         userMap["bio"] = "This bio is empty"
         userMap["image"] =
-            "https://firebasestorage.googleapis.com/v0/b/instaclone-365b0.appspot.com/o/Default%20images%2Fprofile.png?alt=media&token=3ea0b3bc-710d-4ae1-bd1c-ae3668e25de3"
+            "https://www.preciseelectricalwa.com.au/assets/profile-image-placeholder.png"
 
         /////add user info in db
         userRef.child(currentUserId).setValue(userMap)
