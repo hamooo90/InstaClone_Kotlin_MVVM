@@ -2,7 +2,8 @@
  An instagram app clone for android
 
 ## Description 
- An instagram app clone that implements MVVM architectural pattern using Kotlin as frontend and Firebase as backend
+ An instagram app clone that implements MVVM architectural pattern using Kotlin as frontend and Firebase as backend.
+ This app uses Hilt for dependency injection and Coroutines to execute asynchronous firebase operations.
 
 ### Features
 - User registration and login
@@ -32,6 +33,8 @@
 
 ## Components used in the application
 - AndroidViewModel
+- Hilt
+- Coroutines
 - LiveData
 - Kotlin
 - AndroidX
@@ -47,6 +50,8 @@
 - Chat
 - More animation for ui
 
+## Opening the app in Android studio
+To build this app source code in your Android studio you need to put your "google-services.json" firebase config file to app folder
 
 # Licence
 

@@ -22,7 +22,7 @@ class FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseDB() = FirebaseDatabase.getInstance("https://instaclone-365b0-default-rtdb.europe-west1.firebasedatabase.app")
+    fun provideFirebaseDB() = FirebaseDatabase.getInstance()
 
     @Provides
     @Singleton
