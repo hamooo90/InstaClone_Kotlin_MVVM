@@ -7,25 +7,24 @@ import android.text.TextUtils
 import android.util.Patterns
 import android.view.View
 import android.widget.Toast
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.activity.viewModels
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.utils.KeyboardUtil
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_sign_in.*
 
+@AndroidEntryPoint
 class SignInActivity : AppCompatActivity() {
-    private lateinit var mainViewModel: MainViewModel
+    private val viewModel : MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_in)
 
-        ////////
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
         ///////////if user is signed at app start go to main activity/////////////
-        if(mainViewModel.isUserLoggedIn()){
+        if(FirebaseAuth.getInstance().currentUser != null){
             val intent = Intent(this, MainActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
@@ -34,25 +33,26 @@ class SignInActivity : AppCompatActivity() {
         }
 
         //////observe if user signed in
-        mainViewModel.getUserMutableLiveData().observe(this, androidx.lifecycle.Observer {
-            if(it != null){
-//                Toast.makeText(this, it.email.toString(), Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-                finish()
-            }
-        })
-
-        ////// show loader when trying to sign in
-        mainViewModel.getLoadingMutableLiveData().observe(this, Observer {
-            if(it != null){
-                if(it){
+        viewModel.stateMutableLiveData.observe(this, {
+            when (it) {
+                "loading" -> {
                     progress_bar_sign_in.visibility = View.VISIBLE
-                } else{
-                    progress_bar_sign_in.visibility = View.GONE
                 }
+                "done" -> {
+                    progress_bar_sign_in.visibility = View.GONE
+                    Toast.makeText(this,"done",Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                    finish()
+                }
+                else -> {
+                    progress_bar_sign_in.visibility = View.GONE
+                    Toast.makeText(this,it,Toast.LENGTH_SHORT).show()
+                }
+
             }
+
         })
 
         btn_new_account_sign_in.setOnClickListener {
@@ -80,12 +80,10 @@ class SignInActivity : AppCompatActivity() {
                 TextUtils.isEmpty(password) -> {
                 }
                 else -> {
-                    mainViewModel.login(email , password)
+                    viewModel.login(email , password)
                 }
             }
-
         }
-
     }
 
 }

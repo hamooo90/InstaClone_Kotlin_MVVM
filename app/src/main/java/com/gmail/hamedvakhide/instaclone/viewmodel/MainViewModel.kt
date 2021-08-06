@@ -1,240 +1,376 @@
 package com.gmail.hamedvakhide.instaclone.viewmodel
 
-import android.app.Application
+import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.gmail.hamedvakhide.instaclone.repository.AppRepository
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.gmail.hamedvakhide.instaclone.model.Comment
 import com.gmail.hamedvakhide.instaclone.model.Post
 import com.gmail.hamedvakhide.instaclone.model.User
-import com.google.firebase.auth.FirebaseUser
+import com.gmail.hamedvakhide.instaclone.repository.FirebaseRepository
+import com.gmail.hamedvakhide.instaclone.repository.PreferencesRepository
+import com.google.firebase.auth.FirebaseAuthException
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val appRepository: AppRepository
-    private val userMutableLiveData: MutableLiveData<FirebaseUser>
-    private val loggedOutMutableLiveData: MutableLiveData<Boolean>
-    private var loading: MutableLiveData<Boolean>
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    @ApplicationContext private val application: Context,
+    private val repository: FirebaseRepository,
+    private val preferencesRepository: PreferencesRepository
+) : ViewModel() {
 
+    val postsMutableLiveDataList = repository.postsMutableLiveDataList
+    val isPostsLikedByCurrentUserMutableLiveDataList = repository
+        .isPostsLikedByCurrentUserMutableLiveDataList
+    val postsLikesNumberMutableLiveDataList = repository.postsLikesNumberMutableLiveDataList
+    val postsCommentsNumberMutableLiveDataList = repository.postsCommentsNumberMutableLiveDataList
+    val postsPublishersInfoMutableLiveDataList = repository.postsPublishersInfoMutableLiveDataList
 
-    private var followingListMutableLiveData: MutableLiveData<MutableList<String>>
-    private var followerListMutableLiveData: MutableLiveData<MutableList<String>>
-    private var postMutableLiveDataList: MutableLiveData<MutableList<Post>>
-    private var userPostMutableLiveDataList = MutableLiveData<MutableList<Post>>()
-
-    private var searchUserMutableLiveDataList : MutableLiveData<MutableList<User>>
-
-    private var userInfoMutableLiveData : MutableLiveData<User>
-
-    private var isUserFollowedMutableLiveData : MutableLiveData<Boolean>
-
+    val commentsMutableLiveDataList = MutableLiveData<MutableList<Comment>>()
+    var currentUserProfilePic = MutableLiveData<String>()
+    val commentsPublishersInfoMutableLiveDataList = repository.commentsPublishersInfoMutableLiveDataList
+    var addCommentDoneMutableLiveData: MutableLiveData<String> = MutableLiveData()
+    var userInfoMutableLiveData = MutableLiveData<User>()
+    var followerListMutableLiveData = MutableLiveData<MutableList<String>>()
+    var followingListMutableLiveData = MutableLiveData<MutableList<String>>()
+    val userPostMutableLiveDataList = MutableLiveData<MutableList<Post>>()
+    val searchUserMutableLiveDataList = MutableLiveData<MutableList<User>>()
+    var isUserFollowedMutableLiveData = MutableLiveData<Boolean>()
     var profileUpdateDoneMutableLiveData: MutableLiveData<String> = MutableLiveData()
     var addPostDoneMutableLiveData: MutableLiveData<String> = MutableLiveData()
 
-    var currentUserProfilePic : MutableLiveData<String> = MutableLiveData()
+    var userMutableLiveData: MutableLiveData<String> = MutableLiveData()
 
-    var addcommentDoneMutableLiveData: MutableLiveData<String> = MutableLiveData()
+    var stateMutableLiveData: MutableLiveData<String> = MutableLiveData()
 
-    var isLikeMutableLiveDataList:MutableLiveData<MutableList<Boolean>> = MutableLiveData()
-    var postsLikesNumberMutableLiveDataList : MutableLiveData<MutableList<Long>> = MutableLiveData()
-    var postsCommentsNumberMutableLiveDataList : MutableLiveData<MutableList<Long>> = MutableLiveData()
-    var postsPublishersInfoMutableLiveDataList : MutableLiveData<MutableList<User>> = MutableLiveData()
-    var commentsMutableLiveDataList : MutableLiveData<MutableList<Comment>> = MutableLiveData()
-    var commentsPublishersInfoMutableLiveDataList : MutableLiveData<MutableList<User>> = MutableLiveData()
+    ////////////// shared preferences  ///////////////
+    fun readProfileIdFromPref(): String {
+        return  preferencesRepository.readProfileId()
+    }
+    fun readBackUserIdFromPref(): String {
+        return  preferencesRepository.readBackUserId()
+    }
+    fun readPositionFromPref(): Int {
+        return  preferencesRepository.readPosition()
+    }
+    fun saveProfileIdToPref(uid: String) {
+        preferencesRepository.saveProfileId(uid)
+    }
+    fun saveBackUserIdToPref(uid: String) {
+        preferencesRepository.saveBackUserId(uid)
+    }
+    fun savePositionToPref(pos: Int) {
+        preferencesRepository.savePosition(pos)
+    }
+    ////////////// shared preferences  ///////////////
 
+    //////////////// firebase auth  //////////////////
+    fun login(email: String, password: String) {
+        stateMutableLiveData.postValue("loading")
+        viewModelScope.launch {
+            try {
+                repository.login(email, password).let {
+                    stateMutableLiveData.postValue("done")
+                    saveProfileIdToPref(getUserId())
+                }
+            } catch (e: FirebaseAuthException) {
+                stateMutableLiveData.postValue(e.message)
+            }
 
-    init {
-        appRepository = AppRepository(application)
-        userMutableLiveData = appRepository.getUserMutableLiveData()
-        loggedOutMutableLiveData = appRepository.getLoggedOutMutableLiveData()
-        loading = appRepository.getLoadingMutableLiveData()
-
-        followingListMutableLiveData = appRepository.getUserfollowingMutableLiveList()
-        followerListMutableLiveData = appRepository.getUserfollowerMutableLiveList()
-        postMutableLiveDataList = appRepository.getPostMutableLiveDataList()
-        userPostMutableLiveDataList =appRepository.getUserPostMutableLiveDataList()
-
-        searchUserMutableLiveDataList = appRepository.getSearchedUserMutableLiveDataList()
-
-        userInfoMutableLiveData = appRepository.getUserInfoMutableLiveData()
-
-        isUserFollowedMutableLiveData = appRepository.isFollowedMutableLiveData()
-
-        profileUpdateDoneMutableLiveData = appRepository.profileUpdateDoneMutableLiveData
-        addPostDoneMutableLiveData = appRepository.addPostDoneMutableLiveData
-
-        currentUserProfilePic = appRepository.currentUserProfilePic
-
-        addcommentDoneMutableLiveData = appRepository.addcommentDoneMutableLiveData
-
-        isLikeMutableLiveDataList = appRepository.isLikeMutableLiveDataList
-
-        postsLikesNumberMutableLiveDataList = appRepository.postsLikesNumberMutableLiveDataList
-        postsCommentsNumberMutableLiveDataList = appRepository.postsCommentsNumberMutableLiveDataList
-        postsPublishersInfoMutableLiveDataList = appRepository.postsPublishersInfoMutableLiveDataList
-        commentsMutableLiveDataList = appRepository.commentsMutableLiveDataList
-        commentsPublishersInfoMutableLiveDataList = appRepository.commentsPublishersInfoMutableLiveDataList
+        }
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////// Authentication ////////////////////////////////////////////////
-    fun register(fullName: String, userName: String, email: String, password: String){
-        appRepository.register(fullName, userName, email, password)
+    fun register(fullName: String, userName: String, email: String, password: String) {
+        stateMutableLiveData.postValue("loading")
+        viewModelScope.launch {
+            try {
+            repository.register(fullName, userName, email, password).let {
+                stateMutableLiveData.postValue("done")
+                userMutableLiveData.postValue(it)
+                saveProfileIdToPref(getUserId())
+
+            }
+            } catch (e: Exception) {
+                stateMutableLiveData.postValue(e.message)
+            }
+
+        }
     }
 
-    fun login(email: String, password: String){
-        appRepository.login(email, password)
+    fun logOut() {
+        repository.signOut()
+        stateMutableLiveData.postValue("Signed out")
+
     }
 
-    fun logOut(){
-        appRepository.logOut()
+    fun getUserId(): String = repository.getUserId()
+    //////////////// firebase auth ///////////////////
+
+    //////////////// firebase read ///////////////////
+    fun getPosts() {
+        repository.getPosts()
     }
 
-    fun isUserLoggedIn():Boolean {
-        return appRepository.isUserLoggedIn()
+    fun isPostsLiked(postsList: MutableList<Post>) {
+        repository.isPostsLiked(postsList)
     }
 
-    fun getUserId(): String{
-        return appRepository.getUserId()
-    }
-    /////////////////////// Authentication ////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////
-    ////////////////// Db Write///////////////////////////////
-    fun follow(userId: String){
-        appRepository.follow(userId)
+    fun getPostsLikesNumber(postsList: MutableList<Post>) {
+        repository.getPostsLikesNumber(postsList)
     }
 
-    fun unFollow(userId: String){
-        appRepository.unFollow(userId)
+    fun getPostsCommentsNumber(postsList: MutableList<Post>) {
+        repository.getPostsCommentsNumber(postsList)
     }
 
+    fun getPostsPublishersInfo(postsList: MutableList<Post>) {
+        repository.getPostsPublishersInfo(postsList)
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getPostComments(postId: String){
+        viewModelScope.launch {
+            repository.getPostComments(postId).collect {
+                when {
+                    it.isSuccess -> {
+                        val list = it.getOrNull()
+                        if (list != null) {
+                            commentsMutableLiveDataList.postValue(list as MutableList<Comment>?)
+                        }
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getCurrentUserProfilePic(){
+        viewModelScope.launch {
+            repository.getCurrentUserProfilePic().collect {
+                when {
+                    it.isSuccess -> {
+                        val img = it.getOrNull()
+                        if (img != null) {
+                            currentUserProfilePic.postValue(img!!)
+                        }
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    fun getCommentsPublisherInfo(commentsList: MutableList<Comment>){
+        repository.getCommentsPublisherInfo(commentsList)
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getUserInfo(userId: String){
+        viewModelScope.launch {
+            repository.getUserInfo(userId).collect {
+                when {
+                    it.isSuccess -> {
+                        val user = it.getOrNull()
+                        if(user != null){
+                            userInfoMutableLiveData.postValue(user!!)
+                        }
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getUserFollowers(userId: String){
+        viewModelScope.launch {
+            repository.getUserFollowers(userId).collect {
+                when {
+                    it.isSuccess -> {
+                        val list = it.getOrNull()
+                        if (list != null) {
+//                            for(a in list)
+//                            Log.d("DAGDAG", "getUserFollowers: ${list.size}")
+                            followerListMutableLiveData.postValue(list as MutableList<String>)
+                        }
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getUserFollowings(userId: String){
+        viewModelScope.launch {
+            repository.getUserFollowings(userId).collect {
+                when {
+                    it.isSuccess -> {
+                        val list = it.getOrNull()
+                        if (list != null) {
+//                            for(a in list)
+//                            Log.d("DAGDAG", "getUserFollowers: ${list.size}")
+                            followingListMutableLiveData.postValue(list as MutableList<String>)
+                        }
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getUserPosts(userId: String){
+        viewModelScope.launch {
+            repository.getUserPosts(userId).collect {
+                when {
+                    it.isSuccess -> {
+                        val list = it.getOrNull()
+                        userPostMutableLiveDataList.postValue(list as MutableList<Post>)
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun searchUser(text: String){
+//        searchUserMutableLiveDataList.postValue(MutableList<User>)
+        viewModelScope.launch {
+            repository.searchUser(text).collect {
+                when {
+                    it.isSuccess -> {
+                        val list = it.getOrNull()
+                        searchUserMutableLiveDataList.postValue(list as MutableList<User>)
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun isUserFollowed(userId: String){
+        viewModelScope.launch {
+            repository.isUserFollowed(userId).collect {
+                when {
+                    it.isSuccess -> {
+                        val isFollowed = it.getOrNull()
+                        isUserFollowedMutableLiveData.postValue(isFollowed!!)
+
+                    }
+                    it.isFailure -> {
+                        it.exceptionOrNull()?.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+    //////////////// firebase read ///////////////////
+
+    //////////////// firebase write //////////////////
     fun likePost(postId: String){
-        appRepository.likePost(postId)
+        viewModelScope.launch {
+            repository.likePost(postId)
+        }
     }
 
     fun unLikePost(postId: String){
-        appRepository.unLikePost(postId)
+        viewModelScope.launch {
+            repository.unLikePost(postId)
+        }
+    }
+
+    fun follow(userId: String){
+        viewModelScope.launch {
+            repository.follow(userId)
+        }
+    }
+
+    fun unFollow(userId: String){
+        viewModelScope.launch {
+            repository.unFollow(userId)
+        }
     }
 
     fun updateUserProfileInfo(fullName: String, userName: String, bio: String){
-        appRepository.updateUserProfileInfo(fullName, userName, bio)
+        profileUpdateDoneMutableLiveData.postValue("updating")
+        viewModelScope.launch {
+            val isUpdated = repository.updateUserProfileInfo(fullName, userName, bio)
+            if(isUpdated){
+                profileUpdateDoneMutableLiveData.postValue("done")
+            } else {
+                profileUpdateDoneMutableLiveData.postValue("failed")
+            }
+        }
     }
 
-    fun updateUserProfileInfoWithImage(fullName: String, userName: String, bio: String, imageUri: Uri) {
-        appRepository.updateUserProfileInfoWithImage(fullName, userName, bio, imageUri)
+    fun updateUserProfileInfoWithImage(fullName: String, userName: String, bio: String, imageUri: Uri){
+        profileUpdateDoneMutableLiveData.postValue("updating")
+        viewModelScope.launch {
+            val url = repository.uploadImage(imageUri,false)
+            if (url != ""){
+                val isUpdated = repository.updateUserProfileInfoWithImage(fullName, userName, bio, url)
+                if(isUpdated){
+                    profileUpdateDoneMutableLiveData.postValue("done")
+                } else {
+                    profileUpdateDoneMutableLiveData.postValue("failed")
+                }
+            } else {
+                profileUpdateDoneMutableLiveData.postValue("failed")
+            }
+        }
     }
 
     fun addNewPost(caption: String, imageUri: Uri){
-        appRepository.addNewPost(caption, imageUri)
+        addPostDoneMutableLiveData.postValue("adding")
+        viewModelScope.launch {
+            val url = repository.uploadImage(imageUri,true)
+            if (url != ""){
+                val isUpdated = repository.addNewPost(caption, url)
+                if(isUpdated){
+                    addPostDoneMutableLiveData.postValue("done")
+                } else {
+                    addPostDoneMutableLiveData.postValue("failed")
+                }
+            } else {
+                addPostDoneMutableLiveData.postValue("failed")
+            }
+        }
     }
 
-    fun addComment(comment: String, postId: String) {
-        appRepository.addComment(comment, postId)
+    fun addComment(comment: String, postId: String){
+        if(comment.trim().isNotEmpty()) {
+            addCommentDoneMutableLiveData.postValue("adding")
+            viewModelScope.launch {
+                repository.addComment(comment, postId).let {
+                    addCommentDoneMutableLiveData.postValue(it)
+                }
+            }
+        }
     }
-    ////////////////// Db Write///////////////////////////////
-
-    /////////////////////////////////////////////////////////
-    ////////////////// Db Read //////////////////////////////
-
-    fun isUserFollowed(userId: String){
-        appRepository.isUserFollowed(userId)
-    }
-
-    fun isPostsLiked(postsList: MutableList<Post>){
-        appRepository.isPostsLiked(postsList)
-    }
-
-    fun getUserFollowings(userId: String){
-        appRepository.getUserFollowings(userId)
-    }
-
-    fun getUserFollowers(userId: String){
-        appRepository.getUserFollowers(userId)
-    }
-
-    fun searchUser(text: String){
-        appRepository.searchUser(text)
-    }
-
-    fun getPosts(){
-        appRepository.getPosts()
-    }
-
-    fun getUserInfo(userId: String){
-        appRepository.getUserInfo(userId)
-    }
-
-    fun getCurrentUserProfilePic(){
-        appRepository.getCurrentUserProfilePic()
-    }
-
-    fun getUserPosts(userId: String) {
-        appRepository.getUserPosts(userId)
-    }
-
-    fun getPostsCommentsNumber(postsList: MutableList<Post>){
-        appRepository.getPostsCommentsNumber(postsList)
-    }
-
-    fun getPostsLikesNumber(postsList: MutableList<Post>){
-        appRepository.getPostsLikesNumber(postsList)
-    }
-
-    fun getPostsPublishersInfo(postsList: MutableList<Post>){
-        appRepository.getPostsPublishersInfo(postsList)
-    }
-
-    fun getPostComments(postId: String){
-        appRepository.getPostComments(postId)
-    }
-
-    fun getCommentsPublisherInfo(commentsList: MutableList<Comment>) {
-        appRepository.getCommentsPublisherInfo(commentsList)
-    }
-    ////////////////// Db Read //////////////////////////////
-
-    ///////////////////////////////////////////////////////////////
-    ////////////////// Get LiveData ///////////////////////////////
-    fun getUserMutableLiveData():MutableLiveData<FirebaseUser>{
-        return userMutableLiveData
-    }
-
-    fun getLoggedOutMutableLiveData():MutableLiveData<Boolean>{
-        return loggedOutMutableLiveData
-    }
-
-    fun getLoadingMutableLiveData():MutableLiveData<Boolean>{
-        return loading
-    }
-
-    fun getUserfollowingMutableLiveList(): MutableLiveData<MutableList<String>>{
-        return followingListMutableLiveData
-    }
-
-    fun getUserfollowerMutableLiveList(): MutableLiveData<MutableList<String>>{
-        return followerListMutableLiveData
-    }
-
-    fun getPostMutableLiveDataList(): MutableLiveData<MutableList<Post>>{
-        return postMutableLiveDataList
-    }
-
-    fun getUserPostMutableLiveDataList(): MutableLiveData<MutableList<Post>>{
-        return userPostMutableLiveDataList
-    }
-
-    fun getSearchedUserMutableLiveDataList(): MutableLiveData<MutableList<User>>{
-        return searchUserMutableLiveDataList
-    }
-
-    fun getUserInfoMutableLiveData(): MutableLiveData<User>{
-        return userInfoMutableLiveData
-    }
-
-    fun isFollowedMutableLiveData(): MutableLiveData<Boolean>{
-        return isUserFollowedMutableLiveData
-    }
-    ////////////////// Get LiveData ///////////////////////////////
+    //////////////// firebase write //////////////////
 
 }

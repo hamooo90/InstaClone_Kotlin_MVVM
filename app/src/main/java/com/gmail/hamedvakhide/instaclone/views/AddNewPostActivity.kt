@@ -7,17 +7,20 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.lifecycle.ViewModelProvider
+import androidx.activity.viewModels
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.utils.KeyboardUtil
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+//import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.theartofdev.edmodo.cropper.CropImage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_add_new_post.*
 import java.util.*
 
+@AndroidEntryPoint
 class AddNewPostActivity : AppCompatActivity() {
 
-    private lateinit var mainViewModel: MainViewModel
+    private val viewModel: MainViewModel by viewModels()
 
     private var imageUri: Uri? = null
 
@@ -25,11 +28,9 @@ class AddNewPostActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_new_post)
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
         /// observe post upload state
         /// if still uploading show loading progress
-        mainViewModel.addPostDoneMutableLiveData.observe(this,{
+        viewModel.addPostDoneMutableLiveData.observe(this,{
             if(it != null){
                 when (it) {
                     "adding" -> {
@@ -73,7 +74,7 @@ class AddNewPostActivity : AppCompatActivity() {
                 Toast.makeText(this, "Caption cant be empty", Toast.LENGTH_SHORT).show()
             }
             else ->{
-                mainViewModel.addNewPost(edit_text_caption_new_post.text.toString().toLowerCase(Locale.getDefault()), imageUri!!)
+                viewModel.addNewPost(edit_text_caption_new_post.text.toString().toLowerCase(Locale.getDefault()), imageUri!!)
             }
 
         }

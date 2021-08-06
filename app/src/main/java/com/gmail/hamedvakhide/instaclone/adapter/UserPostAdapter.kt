@@ -10,10 +10,17 @@ import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.model.Post
+import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.gmail.hamedvakhide.instaclone.views.fragments.PostDetailFragment
 import com.squareup.picasso.Picasso
 
-class UserPostAdapter(private val mContext: Context, private val mPost: MutableList<Post>) :
+class UserPostAdapter(
+    private val activity: FragmentActivity?,
+    private val mContext: Context,
+    private val mPost: MutableList<Post>,
+    private val viewModel: MainViewModel///
+
+    ) :
     RecyclerView.Adapter<UserPostAdapter.ViewHolder>() {
     class ViewHolder(@NonNull itemView: View) : RecyclerView.ViewHolder(itemView) {
         var postImage: ImageView = itemView.findViewById(R.id.post_image_item_profile)
@@ -33,14 +40,12 @@ class UserPostAdapter(private val mContext: Context, private val mPost: MutableL
             val pos = mPost.size-1-position
             ///////////////////////////////////////////////////////
 
-            val pref = mContext.getSharedPreferences("PREFS",Context.MODE_PRIVATE).edit()
-            pref.putString("userId",mPost[pos].getPublisher())
-            pref.putInt("position",pos)
-            pref.apply()
+            viewModel.saveBackUserIdToPref(mPost[pos].getPublisher())
+            viewModel.savePositionToPref(pos)
 
-            (mContext as FragmentActivity).supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container,PostDetailFragment())
-                .commit()
+            val transaction = activity?.supportFragmentManager?.beginTransaction()
+            transaction?.replace(R.id.fragment_container, PostDetailFragment())?.commit()
+
 
         }
     }

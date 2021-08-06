@@ -2,7 +2,6 @@ package com.gmail.hamedvakhide.instaclone.adapter
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,18 +18,21 @@ import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.model.Post
 import com.gmail.hamedvakhide.instaclone.model.User
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+//import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.gmail.hamedvakhide.instaclone.views.CommentsActivity
 import com.gmail.hamedvakhide.instaclone.views.fragments.ProfileFragment
 import com.squareup.picasso.Picasso
 import de.hdodenhof.circleimageview.CircleImageView
 
-class PostAdapter(private val mContext: Context, private val mPost: List<Post>,
-                  private val mIsLikedLiveData: MutableLiveData<MutableList<Boolean>>,
-                  private val mLikesNumberLiveData: MutableLiveData<MutableList<Long>>,
-                  private val mCommentsNumberLiveData: MutableLiveData<MutableList<Long>>,
-                  private val mPostPublisherInfoLiveData: MutableLiveData<MutableList<User>>,
-                  private val viewModel: MainViewModel,
-                  private val viewLifecycleOwner: LifecycleOwner
+class PostAdapter(
+    private val activity: FragmentActivity?,
+    private val mContext: Context, private val mPost: List<Post>,
+    private val mIsLikedLiveData: MutableLiveData<MutableList<Boolean>>,
+    private val mLikesNumberLiveData: MutableLiveData<MutableList<Long>>,
+    private val mCommentsNumberLiveData: MutableLiveData<MutableList<Long>>,
+    private val mPostPublisherInfoLiveData: MutableLiveData<MutableList<User>>,
+    private val viewModel: MainViewModel,
+    private val viewLifecycleOwner: LifecycleOwner
                   ) :
     RecyclerView.Adapter<PostAdapter.ViewHolder>() {
 
@@ -73,12 +75,11 @@ class PostAdapter(private val mContext: Context, private val mPost: List<Post>,
 
         /// Go to post publisher profile page on circleImage and top username click
         holder.userTopBar.setOnClickListener {
-            val pref = mContext.getSharedPreferences("PREFS",Context.MODE_PRIVATE).edit()
-            pref.putString("profileId",post.getPublisher())
-            pref.apply()
+            viewModel.saveProfileIdToPref(post.getPublisher())
 
-            (mContext as FragmentActivity).supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ProfileFragment()).commit()
+            val transaction = activity?.supportFragmentManager?.beginTransaction()
+            transaction?.replace(R.id.fragment_container, ProfileFragment())?.commit()
+
         }
 
         //////////// observe and change like button state/////////////////
@@ -174,7 +175,6 @@ class PostAdapter(private val mContext: Context, private val mPost: List<Post>,
                     val user = mPublisherInfo[position]
                     holder.textUsername.text = user.getUserName()
                     holder.textPublisher.text = user.getUserName()
-//                    Log.d("DAGDAG", "onBindViewHolder: ${user.getImage()}")
                     if(user.getImage().isNotEmpty()) {////
                         Picasso.get().load(user!!.getImage()).placeholder(R.drawable.profile)
                             .into(holder.circleProfileImage)

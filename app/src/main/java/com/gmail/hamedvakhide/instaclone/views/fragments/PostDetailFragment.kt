@@ -1,23 +1,27 @@
 package com.gmail.hamedvakhide.instaclone.views.fragments
 
-import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.adapter.PostAdapter
+//import com.gmail.hamedvakhide.instaclone.adapter.PostAdapter
 import com.gmail.hamedvakhide.instaclone.model.Post
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
+//import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_post_detail.view.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 
+@AndroidEntryPoint
 class PostDetailFragment : Fragment() {
-    private lateinit var mainViewModel: MainViewModel
+    private val viewModel : MainViewModel by viewModels()
     private lateinit var recyclerView: RecyclerView
     private lateinit var postAdapter: PostAdapter
     private var postList: MutableList<Post> = ArrayList()
@@ -25,6 +29,7 @@ class PostDetailFragment : Fragment() {
     private var position: Int = 0
     private var firstRun: Boolean = true
 
+    @ExperimentalCoroutinesApi
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -32,19 +37,18 @@ class PostDetailFragment : Fragment() {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_post_detail, container, false)
 
-        val pref = context?.getSharedPreferences("PREFS", Context.MODE_PRIVATE)
-        if (pref != null) {
-            userId = pref.getString("userId", "").toString()
-            position = pref.getInt("position",0)
-        }
+        ///////////////////////
+        userId = viewModel.readBackUserIdFromPref()
+        position = viewModel.readPositionFromPref()
+        //////////////////////////
 
         firstRun = true
 
         ///// back button onClick action
         view.btn_back_post_detail.setOnClickListener {
-            val prefsEdit = pref!!.edit()
-            prefsEdit.putString("profileId",userId)
-            prefsEdit.apply()
+            ///////////////////
+            viewModel.saveProfileIdToPref(userId)
+            ////////////////////
             showFragment(ProfileFragment())
         }
 
@@ -55,24 +59,21 @@ class PostDetailFragment : Fragment() {
         linearLayoutManager.stackFromEnd = true
         recyclerView.layoutManager = linearLayoutManager
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)/////////
-
         postAdapter = context?.let { PostAdapter(
+            activity,
             it, postList as ArrayList<Post>,
-            mainViewModel.isLikeMutableLiveDataList,
-            mainViewModel.postsLikesNumberMutableLiveDataList,
-            mainViewModel.postsCommentsNumberMutableLiveDataList,
-            mainViewModel.postsPublishersInfoMutableLiveDataList,
-            mainViewModel,
+            viewModel.isPostsLikedByCurrentUserMutableLiveDataList,
+            viewModel.postsLikesNumberMutableLiveDataList,
+            viewModel.postsCommentsNumberMutableLiveDataList,
+            viewModel.postsPublishersInfoMutableLiveDataList,
+            viewModel,
             viewLifecycleOwner
         ) }!!
 
         recyclerView.adapter = postAdapter
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
         //// observe and add data to postList
-        mainViewModel.getUserPostMutableLiveDataList().observe(viewLifecycleOwner, {
+        viewModel.userPostMutableLiveDataList.observe(viewLifecycleOwner, {
             if (it != null) {
                 postList.clear()
                 postList.addAll(it)
@@ -81,19 +82,17 @@ class PostDetailFragment : Fragment() {
                     recyclerView.scrollToPosition(position)
                     firstRun = false
                 }
-                ///
-                mainViewModel.getPostsCommentsNumber(postList)
-                mainViewModel.getPostsLikesNumber(postList)
+                viewModel.getPostsPublishersInfo(postList)//////
 
-                mainViewModel.isPostsLiked(postList)
+                viewModel.getPostsCommentsNumber(postList)
+                viewModel.getPostsLikesNumber(postList)
+
+                viewModel.isPostsLiked(postList)
                 postAdapter.notifyDataSetChanged()
             }
         })
-        mainViewModel.isLikeMutableLiveDataList.observe(viewLifecycleOwner,{
-            mainViewModel.getPostsPublishersInfo(postList)
-        })
 
-        mainViewModel.getUserPosts(userId)
+        viewModel.getUserPosts(userId)
 
         return view
     }

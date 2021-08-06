@@ -6,36 +6,34 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.utils.KeyboardUtil
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.google.android.material.snackbar.Snackbar
+//import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.squareup.picasso.Picasso
 import com.theartofdev.edmodo.cropper.CropImage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_account_setting.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.util.*
 
-
+@AndroidEntryPoint
 class AccountSettingActivity : AppCompatActivity() {
-    private lateinit var firebaseUser: FirebaseUser
+    private val viewModel : MainViewModel by viewModels()
     private var imageChanged = false
     private var imageUri: Uri? = null
 
-    private lateinit var mainViewModel: MainViewModel
-
-
+    @ExperimentalCoroutinesApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_account_setting)
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
         //////observe for logout
-        mainViewModel.getLoggedOutMutableLiveData().observe(this, androidx.lifecycle.Observer {
-            if (it) {
+        viewModel.stateMutableLiveData.observe(this, androidx.lifecycle.Observer {
+            if (it == "Signed out") {
                 val intent = Intent(this, SignInActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
@@ -44,7 +42,7 @@ class AccountSettingActivity : AppCompatActivity() {
         })
 
         //////////observe and add user info in fields
-        mainViewModel.getUserInfoMutableLiveData().observe(this, {
+        viewModel.userInfoMutableLiveData.observe(this, {
             if (it != null) {
                 Picasso.get().load(it.getImage()).placeholder(R.drawable.profile)
                     .into(circle_Image_setting)
@@ -56,7 +54,7 @@ class AccountSettingActivity : AppCompatActivity() {
 
         /// observe profile update stat
         /// if still updating show loading progress
-        mainViewModel.profileUpdateDoneMutableLiveData.observe(this, {
+        viewModel.profileUpdateDoneMutableLiveData.observe(this, {
             if(it != null) {
                 when (it) {
                     "updating" -> {
@@ -73,18 +71,18 @@ class AccountSettingActivity : AppCompatActivity() {
             }
         })
 
-        firebaseUser = FirebaseAuth.getInstance().currentUser!!
-
         btn_close_setting.setOnClickListener {
             finish()
         }
 
         btn_delete_account_setting.setOnClickListener {
-            Toast.makeText(this,"Not Implemented",Toast.LENGTH_SHORT).show()
+            Snackbar.make(root_account_setting,"Not Implemented",Snackbar.LENGTH_SHORT)
+//                .setBackgroundTint(Color.RED)
+                .show()
         }
-
+//
         btn_logout_setting.setOnClickListener {
-            mainViewModel.logOut()
+            viewModel.logOut()
         }
 
         btn_change_pic_setting.setOnClickListener {
@@ -108,8 +106,9 @@ class AccountSettingActivity : AppCompatActivity() {
             }
         }
 
-        val userId = mainViewModel.getUserId()
-        mainViewModel.getUserInfo(userId)
+        val userId = viewModel.getUserId()
+        viewModel.getUserInfo(userId)
+
     }
 
 
@@ -135,7 +134,7 @@ class AccountSettingActivity : AppCompatActivity() {
                 Toast.makeText(this, "username cant be empty", Toast.LENGTH_SHORT).show()
             }
             else -> {
-                mainViewModel.updateUserProfileInfoWithImage(edit_text_full_name_setting.text.toString().toLowerCase(
+                viewModel.updateUserProfileInfoWithImage(edit_text_full_name_setting.text.toString().toLowerCase(
                     Locale.getDefault()
                 ), edit_text_username_setting.text.toString().toLowerCase(
                     Locale.getDefault()
@@ -157,7 +156,7 @@ class AccountSettingActivity : AppCompatActivity() {
             }
             else -> {
 
-                mainViewModel.updateUserProfileInfo(
+                viewModel.updateUserProfileInfo(
                     edit_text_full_name_setting.text.toString().toLowerCase(
                         Locale.getDefault()
                     ), edit_text_username_setting.text.toString().toLowerCase(

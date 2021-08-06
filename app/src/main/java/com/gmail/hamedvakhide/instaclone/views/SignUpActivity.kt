@@ -6,40 +6,39 @@ import android.os.Bundle
 import android.text.TextUtils
 import android.util.Patterns
 import android.view.View
-import androidx.lifecycle.ViewModelProvider
+import android.widget.Toast
+import androidx.activity.viewModels
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.utils.KeyboardUtil
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_sign_up.*
 
+@AndroidEntryPoint
 class SignUpActivity : AppCompatActivity() {
-    private lateinit var mainViewModel: MainViewModel
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up)
 
-        ////////
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
-        //////observe if user signed up
-        //////if signed up go to MainActivity
-        mainViewModel.getUserMutableLiveData().observe(this, androidx.lifecycle.Observer {
-            if(it != null){
-                val intent = Intent(this, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-                finish()
-            }
-        })
-
         ////// show loader when trying to sign up
-        mainViewModel.getLoadingMutableLiveData().observe(this, androidx.lifecycle.Observer {
-            if(it != null){
-                if(it){
+        viewModel.stateMutableLiveData.observe(this, androidx.lifecycle.Observer {
+            when(it){
+                "loading" -> {
                     progress_bar_sign_up.visibility = View.VISIBLE
-                } else{
+                }
+                "done" -> {
                     progress_bar_sign_up.visibility = View.GONE
+                    Toast.makeText(this,"done", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                    finish()
+                }
+                else -> {
+                    progress_bar_sign_up.visibility = View.GONE
+                    Toast.makeText(this,it, Toast.LENGTH_SHORT).show()
                 }
             }
         })
@@ -81,7 +80,7 @@ class SignUpActivity : AppCompatActivity() {
                 TextUtils.isEmpty(userName) -> {
                 }
                 else -> {
-                    mainViewModel.register(name,userName,email, password)
+                    viewModel.register(name,userName,email, password)
                 }
             }
 

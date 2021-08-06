@@ -1,16 +1,21 @@
 package com.gmail.hamedvakhide.instaclone.views
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.viewModels
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.gmail.hamedvakhide.instaclone.R
+import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.gmail.hamedvakhide.instaclone.views.fragments.*
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    private val viewModel: MainViewModel by viewModels()
 
     /// bottom navigation select action
     private val onNavigationItemSelectedListener =
@@ -46,15 +51,11 @@ class MainActivity : AppCompatActivity() {
         val currentFragment = this.supportFragmentManager.findFragmentById(R.id.fragment_container)
         when (currentFragment) {
             is PostDetailFragment -> {
-                var userId = ""
-                val pref = this.getSharedPreferences("PREFS", Context.MODE_PRIVATE)
-                if (pref != null) {
-                    userId = pref.getString("userId", "").toString()
-                }
+                ////////////////
+                val backUid = viewModel.readBackUserIdFromPref()
+                viewModel.saveProfileIdToPref(backUid)
+                ////////////////
 
-                val prefsEdit = pref.edit()
-                prefsEdit.putString("profileId",userId)
-                prefsEdit.apply()
                 showFragment(ProfileFragment())
             }
             !is HomeFragment -> {

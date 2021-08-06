@@ -7,40 +7,47 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.adapter.UserAdapter
+//import com.gmail.hamedvakhide.instaclone.adapter.UserAdapter
 import com.gmail.hamedvakhide.instaclone.model.User
 import com.gmail.hamedvakhide.instaclone.utils.KeyboardUtil
 import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
+//import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_search.view.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.util.*
 import kotlin.collections.ArrayList
 
 
+@AndroidEntryPoint
 class SearchFragment : Fragment() {
-    private lateinit var mainViewModel: MainViewModel
+    private val viewModel : MainViewModel by viewModels()
+
     private var recyclerView: RecyclerView? = null
     private lateinit var userAdapter: UserAdapter
     private lateinit var mUser: MutableList<User>
 
     override fun onStop() {
         super.onStop()
-        context?.let { KeyboardUtil().hideKeyboard(it) }
+        activity?.let { KeyboardUtil().hideKeyboard(it) }
     }
 
     override fun onPause() {
         super.onPause()
-        context?.let { KeyboardUtil().hideKeyboard(it) }
+        activity?.let { KeyboardUtil().hideKeyboard(it) }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        context?.let { KeyboardUtil().hideKeyboard(it) }
+        activity?.let { KeyboardUtil().hideKeyboard(it) }
     }
 
+    @ExperimentalCoroutinesApi
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -57,13 +64,14 @@ class SearchFragment : Fragment() {
         recyclerView?.setHasFixedSize(true)
         recyclerView?.layoutManager = LinearLayoutManager(context)
         mUser = ArrayList()
-        userAdapter = context?.let { UserAdapter(it, mUser as ArrayList<User>) }!!
+
+        userAdapter = context?.let {
+                UserAdapter(activity,it, mUser as ArrayList<User>,viewModel)
+        }!!
         recyclerView?.adapter = userAdapter
 
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-
         //// observe to refresh recyclerView
-        mainViewModel.getSearchedUserMutableLiveDataList().observe(viewLifecycleOwner, {
+        viewModel.searchUserMutableLiveDataList.observe(viewLifecycleOwner, {
             if(it != null){
                 mUser.clear()
                 mUser.addAll(it)
@@ -81,8 +89,12 @@ class SearchFragment : Fragment() {
                     recyclerView?.visibility = View.GONE
 
                 } else {
+                    /// fix previous search visible for a second bug ///
+                    mUser.clear()
+                    userAdapter.notifyDataSetChanged()
+                    ////////////////////////////////////////////////////
                     recyclerView?.visibility = View.VISIBLE
-                    mainViewModel.searchUser(s.toString().toLowerCase(Locale.getDefault()))
+                    viewModel.searchUser(s.toString().toLowerCase(Locale.getDefault()))
                 }
             }
             override fun afterTextChanged(s: Editable?) {

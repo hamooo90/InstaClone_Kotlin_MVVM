@@ -11,12 +11,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.gmail.hamedvakhide.instaclone.R
 import com.gmail.hamedvakhide.instaclone.views.fragments.ProfileFragment
 import com.gmail.hamedvakhide.instaclone.model.User
+import com.gmail.hamedvakhide.instaclone.viewmodel.MainViewModel
 import com.squareup.picasso.Picasso
 import de.hdodenhof.circleimageview.CircleImageView
 
 class UserAdapter(
+    private val activity: FragmentActivity?,
     private val mContext: Context,
-    private val mUser: List<User>
+    private val mUser: List<User>,
+    private val viewModel: MainViewModel///
+
 ) : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -33,12 +37,11 @@ class UserAdapter(
 
         holder.itemView.setOnClickListener {
 
-            val pref = mContext.getSharedPreferences("PREFS",Context.MODE_PRIVATE).edit()
-            pref.putString("profileId",user.getUid())
-            pref.apply()
+            viewModel.saveProfileIdToPref(user.getUid())
 
-            (mContext as FragmentActivity).supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container,ProfileFragment()).commit()
+            val transaction = activity?.supportFragmentManager?.beginTransaction()
+            transaction?.replace(R.id.fragment_container, ProfileFragment())?.commit()
+
         }
 
 
