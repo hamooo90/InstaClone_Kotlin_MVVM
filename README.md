@@ -51,7 +51,7 @@
 - More animation for ui
 
 ## Opening the app in Android studio
-To build this app source code in your Android studio you need to put your "google-services.json" firebase config file to app folder
+To build this source code in your Android studio you need to put your "google-services.json" firebase config file in app folder
 
 # Licence
 
